@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Thêm Khách Hàng Mới{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Thêm Khách Hàng Mới</h1>
+<form method="POST">
+    <div class="mb-3">
+        <label for="name" class="form-label">Tên Khách Hàng:</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="phone" class="form-label">Điện Thoại:</label>
+        <input type="text" class="form-control" id="phone" name="phone">
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email:</label>
+        <input type="email" class="form-control" id="email" name="email">
+    </div>
+    <div class="mb-3">
+        <label for="address" class="form-label">Địa Chỉ:</label>
+        <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Thêm Khách Hàng</button>
+    <a href="{{ url_for('customers_bp.customers') }}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}

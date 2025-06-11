@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Trang Chủ{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Trang Chủ - Quản Lý Bán Hàng</h1>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center bg-primary text-white mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Tổng Sản Phẩm</h5>
+                <p class="card-text fs-2">{{ total_products }}</p>
+                <a href="{{ url_for('products_bp.products') }}" class="btn btn-outline-light">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-success text-white mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Tổng Giao Dịch</h5>
+                <p class="card-text fs-2">{{ total_sales_transactions }}</p>
+                <a href="{{ url_for('sales_bp.sales') }}" class="btn btn-outline-light">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-info text-white mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Tổng Doanh Thu</h5>
+                <p class="card-text fs-2">{{ "{:,.0f}".format(total_revenue) }} VND</p>
+                <a href="{{ url_for('sales_bp.sales') }}" class="btn btn-outline-light">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-warning text-white mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Tổng Khách Hàng</h5>
+                <p class="card-text fs-2">{{ total_customers }}</p>
+                <a href="{{ url_for('customers_bp.customers') }}" class="btn btn-outline-light">Xem chi tiết</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

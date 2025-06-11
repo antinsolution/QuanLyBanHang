@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Tạo Giao Dịch Bán Hàng{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Tạo Giao Dịch Bán Hàng Mới</h1>
+
+<form method="POST" id="sale-form">
+    <div class="mb-3">
+        <label for="customer_id" class="form-label">Khách Hàng:</label>
+        <select class="form-select" id="customer_id" name="customer_id">
+            <option value="none">-- Chọn khách hàng (Không bắt buộc) --</option>
+            {% for customer in customers %}
+                <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.phone if customer.phone else 'N/A' }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <hr>
+    <h2 class="mb-3">Thêm Sản Phẩm</h2>
+    <div class="mb-3">
+        <label for="product-search" class="form-label">Tìm kiếm sản phẩm:</label>
+        <input type="text" class="form-control" id="product-search" placeholder="Nhập tên sản phẩm...">
+        <div id="search-results" class="list-group position-absolute" style="z-index: 1000; width: 300px; max-height: 200px; overflow-y: auto;">
+            <!-- Kết quả tìm kiếm sẽ hiển thị ở đây -->
+        </div>
+    </div>
+
+    <div class="card mb-4 d-none" id="product-add-area">
+        <div class="card-header">
+            Thông tin sản phẩm được chọn
+        </div>
+        <div class="card-body">
+            <h5 class="card-title"><span id="selected-product-name"></span></h5>
+            <p class="card-text">Giá: <span id="selected-product-price"></span> VND</p>
+            <p class="card-text">Tồn kho: <span id="selected-product-stock"></span></p>
+            <div class="mb-3">
+                <label for="add-quantity" class="form-label">Số lượng:</label>
+                <input type="number" class="form-control" id="add-quantity" min="1" value="1" style="width: 100px;">
+                <input type="hidden" id="add-product-id">
+                <input type="hidden" id="add-product-unit-price">
+            </div>
+            <button type="button" class="btn btn-primary" id="add-to-cart-btn">Thêm vào giỏ</button>
+        </div>
+    </div>
+
+    <hr>
+    <h2 class="mb-3">Giỏ Hàng</h2>
+    <table class="table table-bordered table-striped" id="cart-items-table">
+        <thead>
+            <tr>
+                <th>Sản Phẩm</th>
+                <th>Giá</th>
+                <th>Số Lượng</th>
+                <th>Thành Tiền</th>
+                <th class="text-center">Xóa</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Các sản phẩm trong giỏ hàng sẽ được thêm vào đây bằng JavaScript -->
+        </tbody>
+    </table>
+
+    <div class="mb-3 fs-4">
+        <strong>Tổng Cộng: <span id="total-amount">0</span> VND</strong>
+    </div>
+
+    <button type="submit" class="btn btn-success" id="submit-sale-btn">Ghi Nhận Giao Dịch</button>
+    <a href="{{ url_for('sales_bp.sales') }}" class="btn btn-secondary">Hủy</a>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productSearchInput = document.getElementById('product-search');
+        const searchResultsDiv = document.getElementById('search-results');
+        const productAddArea = document.getElementById('product-add-area');
+        const selectedProductName = document.getElementById('selected-product-name');
+        const selectedProductPrice = document.getElementById('selected-product-price');
+        const selectedProductStock = document.getElementById('selected-product-stock');
+        const addQuantityInput = document.getElementById('add-quantity');
+        const addProductIdInput = document.getElementById('add-product-id');
+        const addProductUnitPriceInput = document.getElementById('add-product-unit-price');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const cartItemsTableBody = document.querySelector('#cart-items-table tbody');
+        const totalAmountSpan = document.getElementById('total-amount');
+        const saleForm = document.getElementById('sale-form');
+        const submitSaleBtn = document.getElementById('submit-sale-btn');
+
+        let cart = {}; 
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        function updateCartTotal() {
+            let total = 0;
+            for (const productId in cart) {
+                total += cart[productId].quantity * cart[productId].price;
+            }
+            totalAmountSpan.textContent = formatCurrency(total);
+            submitSaleBtn.disabled = Object.keys(cart).length === 0;
+        }
+
+        function renderCart() {
+            cartItemsTableBody.innerHTML = ''; 
+            for (const productId in cart) {
+                const item = cart[productId];
+                const row = cartItemsTableBody.insertRow();
+                row.setAttribute('data-product-id', item.id); 
+
+                const subtotal = item.quantity * item.price;
+
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${formatCurrency(item.price)}</td>
+                    <td>${item.quantity}</td>
+                    <td>${formatCurrency(subtotal)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger remove-item-btn" data-product-id="${item.id}">Xóa</button>
+                    </td>
+                `;
+            }
+            updateCartTotal();
+        }
+
+        // --- Event Listeners ---
+
+        // Tìm kiếm sản phẩm
+        let searchTimeout;
+        productSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            if (query.length < 2) {
+                searchResultsDiv.innerHTML = '';
+                productAddArea.classList.add('d-none');
+                return;
+            }
+
+            searchTimeout = setTimeout(function() {
+                // Sửa URL API cho phù hợp với Blueprint
+                fetch(`/products/api/search?q=${encodeURIComponent(query)}`) 
+                    .then(response => response.json())
+                    .then(products => {
+                        searchResultsDiv.innerHTML = '';
+                        if (products.length > 0) {
+                            products.forEach(product => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.classList.add('list-group-item', 'list-group-item-action');
+                                item.textContent = `${product.name} (Giá: ${formatCurrency(product.price)}, Tồn: ${product.stock})`;
+                                item.setAttribute('data-product-id', product.id);
+                                item.setAttribute('data-product-name', product.name);
+                                item.setAttribute('data-product-price', product.price);
+                                item.setAttribute('data-product-stock', product.stock);
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    selectedProductName.textContent = this.dataset.productName;
+                                    selectedProductPrice.textContent = formatCurrency(parseFloat(this.dataset.productPrice));
+                                    selectedProductStock.textContent = this.dataset.productStock;
+                                    addQuantityInput.value = 1;
+                                    addQuantityInput.max = parseInt(this.dataset.productStock);
+                                    productId = parseInt(this.dataset.productId);
+                                    addProductIdInput.value = productId;
+                                    addProductUnitPriceInput.value = parseFloat(this.dataset.productPrice);
+
+                                    if (cart[productId]) {
+                                        addQuantityInput.value = cart[productId].quantity + 1;
+                                    } else {
+                                        addQuantityInput.value = 1;
+                                    }
+                                    
+                                    productAddArea.classList.remove('d-none');
+                                    searchResultsDiv.innerHTML = '';
+                                    productSearchInput.value = '';
+                                    addQuantityInput.focus();
+                                });
+                                searchResultsDiv.appendChild(item);
+                            });
+                        } else {
+                            searchResultsDiv.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy sản phẩm.</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching products:', error);
+                        searchResultsDiv.innerHTML = '<div class="list-group-item text-danger">Lỗi khi tải sản phẩm.</div>';
+                    });
+            }, 300);
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!productSearchInput.contains(event.target) && !searchResultsDiv.contains(event.target)) {
+                searchResultsDiv.innerHTML = '';
+            }
+        });
+
+        addToCartBtn.addEventListener('click', function() {
+            const productId = parseInt(addProductIdInput.value);
+            const productName = selectedProductName.textContent;
+            const productPrice = parseFloat(addProductUnitPriceInput.value);
+            const quantity = parseInt(addQuantityInput.value);
+            const availableStock = parseInt(selectedProductStock.textContent);
+
+            if (isNaN(quantity) || quantity <= 0) {
+                alert('Vui lòng nhập số lượng hợp lệ.');
+                return;
+            }
+
+            const currentCartQuantity = cart[productId] ? cart[productId].quantity : 0;
+            if ((currentCartQuantity + quantity) > availableStock) {
+                alert(`Số lượng bạn muốn thêm cho "${productName}" (${currentCartQuantity + quantity}) vượt quá tồn kho hiện có (${availableStock}).`);
+                return;
+            }
+
+            if (cart[productId]) {
+                cart[productId].quantity += quantity;
+            } else {
+                cart[productId] = {
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    quantity: quantity
+                };
+            }
+
+            renderCart();
+            productAddArea.classList.add('d-none');
+            productSearchInput.focus();
+        });
+
+        cartItemsTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-item-btn')) {
+                const productIdToRemove = parseInt(e.target.dataset.productId);
+                delete cart[productIdToRemove];
+                renderCart();
+            }
+        });
+
+        saleForm.addEventListener('submit', function(e) {
+            if (Object.keys(cart).length === 0) {
+                e.preventDefault(); 
+                alert('Giỏ hàng trống. Vui lòng thêm sản phẩm vào giỏ trước khi tạo giao dịch.');
+                return;
+            }
+
+            document.querySelectorAll('.cart-item-input').forEach(input => input.remove());
+
+            for (const productId in cart) {
+                const item = cart[productId];
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'item_product_id[]';
+                idInput.value = item.id;
+                idInput.classList.add('cart-item-input'); // Thêm class để dễ xóa
+                saleForm.appendChild(idInput);
+
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'hidden';
+                qtyInput.name = 'item_quantity[]';
+                qtyInput.value = item.quantity;
+                qtyInput.classList.add('cart-item-input');
+                saleForm.appendChild(qtyInput);
+
+                const priceInput = document.createElement('input');
+                priceInput.type = 'hidden';
+                priceInput.name = 'item_price_at_sale[]';
+                priceInput.value = item.price;
+                priceInput.classList.add('cart-item-input');
+                saleForm.appendChild(priceInput);
+            }
+        });
+
+        updateCartTotal(); 
+    });
+</script>
+{% endblock %}

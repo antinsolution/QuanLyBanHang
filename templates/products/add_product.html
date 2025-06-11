@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Thêm Sản Phẩm Mới{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Thêm Sản Phẩm Mới</h1>
+<form method="POST">
+    <div class="mb-3">
+        <label for="name" class="form-label">Tên Sản Phẩm:</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="price" class="form-label">Giá:</label>
+        <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+    </div>
+    <div class="mb-3">
+        <label for="stock" class="form-label">Tồn Kho:</label>
+        <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Thêm Sản Phẩm</button>
+    <a href="{{ url_for('products_bp.products') }}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}

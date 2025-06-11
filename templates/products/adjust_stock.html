@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Điều Chỉnh Tồn Kho: {{ product.name }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Điều Chỉnh Tồn Kho: {{ product.name }}</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Thông tin hiện tại</h5>
+        <p class="card-text"><strong>Sản phẩm:</strong> {{ product.name }}</p>
+        <p class="card-text"><strong>Giá:</strong> {{ "{:,.0f}".format(product.price) }} VND</p>
+        <p class="card-text"><strong>Tồn kho hiện tại:</strong> {{ product.stock }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="adjustment_type" class="form-label">Loại Điều Chỉnh:</label>
+        <select class="form-select" id="adjustment_type" name="adjustment_type" required>
+            <option value="increase">Tăng tồn kho (nhập hàng, kiểm kê thừa)</option>
+            <option value="decrease">Giảm tồn kho (hư hỏng, kiểm kê thiếu)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="quantity" class="form-label">Số Lượng Điều Chỉnh:</label>
+        <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Thực Hiện Điều Chỉnh</button>
+    <a href="{{ url_for('products_bp.products') }}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}

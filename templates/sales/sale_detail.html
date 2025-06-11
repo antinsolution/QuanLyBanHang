@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi Tiết Giao Dịch #{{ sale.id }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Chi Tiết Giao Dịch #{{ sale.id }}</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Thông tin chung
+    </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item"><strong>ID Giao Dịch:</strong> {{ sale.id }}</li>
+        <li class="list-group-item"><strong>Ngày Bán:</strong> {{ sale.sale_date }}</li>
+        <li class="list-group-item"><strong>Khách Hàng:</strong> 
+            {% if sale.customer_name %}
+                <a href="{{ url_for('customers_bp.edit_customer', id=sale.customer_id) }}">{{ sale.customer_name }}</a>
+            {% else %}
+                Khách lẻ
+            {% endif %}
+        </li>
+        <li class="list-group-item"><strong>Tổng Số Tiền:</strong> {{ "{:,.0f}".format(sale.total_amount) }} VND</li>
+    </ul>
+</div>
+
+<h2 class="mb-3">Sản Phẩm Trong Giao Dịch</h2>
+{% if not sale_items %}
+    <div class="alert alert-info" role="alert">
+        Không có sản phẩm nào trong giao dịch này.
+    </div>
+{% else %}
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Tên Sản Phẩm</th>
+                <th>Số Lượng</th>
+                <th>Giá Bán (tại thời điểm)</th>
+                <th>Thành Tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ "{:,.0f}".format(item.price_at_sale) }} VND</td>
+                <td>{{ "{:,.0f}".format(item.quantity * item.price_at_sale) }} VND</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<a href="{{ url_for('sales_bp.sales') }}" class="btn btn-secondary mt-3">Quay Lại Danh Sách Giao Dịch</a>
+{% endblock %}
