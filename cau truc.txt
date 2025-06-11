@@ -1,0 +1,30 @@
+sales_management_app/
+├── app.py              # File chính, khởi tạo app và đăng ký blueprints
+├── sales.db            # Database file
+├── blueprints/         # Thư mục chứa các Blueprint
+│   ├── __init__.py     # File này biến 'blueprints' thành một Python package
+│   ├── products.py     # Blueprint cho quản lý sản phẩm
+│   ├── sales.py        # Blueprint cho quản lý bán hàng
+│   └── customers.py    # Blueprint cho quản lý khách hàng
+├── templates/          # Thư mục templates tổng thể (cho base.html, index.html)
+│   ├── base.html
+│   ├── index.html
+│   ├── products/       # Templates riêng cho Blueprint products
+│   │   ├── products.html
+│   │   ├── add_product.html
+│   │   ├── edit_product.html
+│   │   └── adjust_stock.html
+│   ├── sales/          # Templates riêng cho Blueprint sales
+│   │   ├── sales.html
+│   │   ├── add_sale.html
+│   │   └── sale_detail.html
+│   └── customers/      # Templates riêng cho Blueprint customers
+│       ├── customers.html
+│       ├── add_customer.html
+│       └── edit_customer.html
+└── static/             # Thư mục static tổng thể (nếu có CSS/JS tùy chỉnh)
+
+python -m venv venv
+.\venv\Scripts\activate
+pip install Flask
+python app.py
